@@ -1,14 +1,25 @@
-FROM rust:slim AS build
-ENV DEBIAN_FRONTEND=noninteractive
-WORKDIR /usr/src/binserve
+
+FROM rust:1.71 as builder
+
+WORKDIR /usr/src/app
 COPY . .
 
-RUN apt-get update && apt-get install -yf make pkg-config
-RUN cargo build --release && \
-    install -Dsvm755 ./target/release/binserve ./bin/binserve
 
-FROM gcr.io/distroless/cc:latest AS final
-WORKDIR /app
-COPY --from=build /usr/src/binserve/bin /app
+RUN cargo build --release
 
-ENTRYPOINT [ "/app/binserve" ]
+
+FROM debian:bullseye-slim
+
+
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /usr/src/app/target/release/binserve /usr/local/bin/binserve
+COPY --from=builder /usr/src/app/binserve.json /usr/local/bin/binserve.json
+
+WORKDIR /usr/local/bin
+EXPOSE 1337
+
+CMD ["./binserve", "-c", "binserve.json"]
+
+
+

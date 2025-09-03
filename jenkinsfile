@@ -1,0 +1,54 @@
+pipeline {
+  agent any
+
+  environment {
+    IMAGE_NAME = 'your-dockerhub-username/binserve'
+    IMAGE_TAG = "${env.BUILD_NUMBER}"
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
+    }
+
+    stage('Build Docker Image') {
+      steps {
+        script {
+          docker.build("${IMAGE_NAME}:${IMAGE_TAG}")
+        }
+      }
+    }
+
+    stage('Unit Tests') {
+      steps {
+        sh 'cargo test --release'
+      }
+    }
+
+    stage('Push to Registry') {
+      steps {
+        withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+          script {
+            docker.withRegistry('https://registry.hub.docker.com', 'dockerhub-creds') {
+              docker.image("${IMAGE_NAME}:${IMAGE_TAG}").push()
+              docker.image("${IMAGE_NAME}:${IMAGE_TAG}").push('latest')
+            }
+          }
+        }
+      }
+    }
+  }
+
+  post {
+    success {
+      echo "Build and push succeeded!"
+    }
+    failure {
+      echo "Build failed!"
+    }
+  }
+}
+
+
