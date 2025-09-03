@@ -45,9 +45,7 @@ pipeline {
     success {
       echo "Build and push succeeded!"
     }
-    failure {
-      echo "Build failed!"
-    }
+    
   }
 }
 
