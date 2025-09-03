@@ -2,7 +2,7 @@ pipeline {
   agent any
 
   environment {
-    IMAGE_NAME = 'your-dockerhub-username/binserve'
+    IMAGE_NAME = 'asha12345/binserve'
     IMAGE_TAG = "${env.BUILD_NUMBER}"
   }
 
